@@ -2,6 +2,8 @@
 
 A Slack + Spotify integration that lets teams collaboratively control music playback. Connect Slack channels to Spotify, add songs via slash commands, and vote to skip tracks with emoji reactions.
 
+![Demo](assets/playlift-demo.gif)
+
 ## Quick Install
 
 **If you just want to install it, use this URL:**
