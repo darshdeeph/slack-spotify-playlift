@@ -1,0 +1,27 @@
+{
+  "name": "slack-playlift",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Slack + Spotify integration prototype: connect channels to Spotify, add songs via slash commands, and react to queued tracks.",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon src/index.js",
+    "vercel-start": "vercel dev --listen 3000",
+    "lint": "echo 'no linter configured'"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@upstash/qstash": "^2.8.4",
+    "axios": "^1.5.0",
+    "body-parser": "^1.20.2",
+    "express": "^4.18.2",
+    "ioredis": "^5.8.2",
+    "qs": "^6.11.0",
+    "serverless-http": "^3.2.0"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
