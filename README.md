@@ -13,7 +13,7 @@ https://slack.com/oauth/v2/authorize?client_id=9916406757152.9908273479763&scope
 After installation, use these commands in any channel:
 - `/connect` - Connect the channel to Spotify
 - `/add-song Song Name - Artist` - Add a song to the queue
-- `/skip` - Vote to skip the current song
+- `/skip` - Initiate a 10-second voting period where users can react with 👍 to save or 👎 to skip
 
 **If you're looking to fork or self-host, read ahead.**
 
