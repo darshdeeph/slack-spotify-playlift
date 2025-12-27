@@ -2,6 +2,21 @@
 
 A Slack + Spotify integration that lets teams collaboratively control music playback. Connect Slack channels to Spotify, add songs via slash commands, and vote to skip tracks with emoji reactions.
 
+## Quick Install
+
+**If you just want to install it, use this URL:**
+
+```
+https://slack.com/oauth/v2/authorize?client_id=9916406757152.9908273479763&scope=channels:history,channels:read,chat:write,commands,reactions:read,groups:read&user_scope=
+```
+
+After installation, use these commands in any channel:
+- `/connect` - Connect the channel to Spotify
+- `/add-song Song Name - Artist` - Add a song to the queue
+- `/skip` - Vote to skip the current song
+
+**If you're looking to fork or self-host, read ahead.**
+
 ## Technologies
 
 - **Node.js** + **Express** - API server
@@ -23,18 +38,6 @@ A Slack + Spotify integration that lets teams collaboratively control music play
 - **POST /process-skip** - QStash callback to process skip votes after 10-second delay
 - **POST /emoji-callback** - Receives Slack reaction events (👍/👎) for skip voting
 
-## Install in Slack
-
-Install this app to your Slack workspace using this URL:
-
-```
-https://slack.com/oauth/v2/authorize?client_id=9916406757152.9908273479763&scope=channels:history,channels:read,chat:write,commands,reactions:read,groups:read&user_scope=
-```
-
-After installation, use these commands in any channel:
-- `/connect` - Connect the channel to Spotify
-- `/add-song Song Name - Artist` - Add a song to the queue
-- `/skip` - Vote to skip the current song
 
 ## Self-Hosting
 
