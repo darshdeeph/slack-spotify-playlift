@@ -123,9 +123,9 @@ app.post('/connect', async (req, res) => {
     await redis.setChannelTeam(channel_id, team_id);
 
     // Create channel entry in Redis if needed
-    let channel = await redis.getChannel(channel_id);
+    let channel = await redis.getChannel(team_id, channel_id);
     if (!channel) {
-      await redis.setChannel(channel_id, { slackChannelId: channel_id, queue: [] });
+      await redis.setChannel(team_id, channel_id, { slackChannelId: channel_id });
     }
 
     // Generate Spotify auth URL
@@ -151,7 +151,14 @@ app.get('/spotify-callback', async (req, res) => {
 
   try {
     const token = await spotify.exchangeCodeForToken(code);
-    await redis.updateChannel(channelId, { spotify: token });
+
+    // Get the team ID for this channel
+    const teamId = await redis.getChannelTeam(channelId);
+    if (!teamId) {
+      return res.status(400).send('Channel not found or not connected');
+    }
+
+    await redis.updateChannel(teamId, channelId, { spotify: token });
     return res.send('Spotify connected for channel ' + channelId + '. You can close this window.');
   } catch (err) {
     console.error(err);
@@ -170,7 +177,7 @@ app.post('/add-song', async (req, res) => {
     // Get bot token for this team
     const botToken = await getBotToken(team_id);
 
-    const ch = await redis.getChannel(channel_id);
+    const ch = await redis.getChannel(team_id, channel_id);
     if (!ch || !ch.spotify) {
       return res.json({ text: 'Channel is not connected to Spotify. Use /connect first.' });
     }
@@ -216,7 +223,7 @@ app.post('/skip', async (req, res) => {
     // Get bot token for this team
     const botToken = await getBotToken(team_id);
 
-    const ch = await redis.getChannel(channel_id);
+    const ch = await redis.getChannel(team_id, channel_id);
     if (!ch || !ch.spotify) {
       return res.json({ text: 'Channel is not connected to Spotify. Use /connect first.' });
     }
@@ -264,7 +271,7 @@ app.post('/skip', async (req, res) => {
     skipVote.messageTs = message.ts;
 
     // Store in Redis with empty vote sets
-    await redis.setSkipVote(channel_id, skipId, {
+    await redis.setSkipVote(team_id, channel_id, skipId, {
       ...skipVote,
       thumbsUpUsers: new Set(),
       thumbsDownUsers: new Set()
@@ -328,13 +335,13 @@ app.post('/process-skip', async (req, res) => {
     // Get bot token for this team
     const botToken = await getBotToken(teamId);
 
-    const ch = await redis.getChannel(channelId);
+    const ch = await redis.getChannel(teamId, channelId);
     if (!ch) {
       console.log('Channel not found');
       return res.sendStatus(200);
     }
 
-    const skipVote = await redis.getSkipVote(channelId, skipId);
+    const skipVote = await redis.getSkipVote(teamId, channelId, skipId);
     if (!skipVote) {
       console.log('Skip vote not found');
       return res.sendStatus(200);
@@ -365,7 +372,7 @@ app.post('/process-skip', async (req, res) => {
     await slack.postMessage(ch.slackChannelId, resultMessage, botToken);
 
     // Clean up skip vote from Redis
-    await redis.deleteSkipVote(channelId, skipId);
+    await redis.deleteSkipVote(teamId, channelId, skipId);
 
     res.sendStatus(200);
   } catch (err) {
@@ -401,8 +408,15 @@ app.post('/emoji-callback', async (req, res) => {
     const channelId = ev.item.channel;
     const messageTs = ev.item.ts;
 
+    // Get team ID for this channel
+    const teamId = await redis.getChannelTeam(channelId);
+    if (!teamId) {
+      console.log(`Ignoring reaction: channel ${channelId} has no team mapping`);
+      return res.sendStatus(200);
+    }
+
     // Find the skip vote that matches this message ts (ID)
-    const skipVote = await redis.findSkipVoteByMessageTs(channelId, messageTs);
+    const skipVote = await redis.findSkipVoteByMessageTs(teamId, channelId, messageTs);
 
     // Ignore reactions on messages that aren't tracked skip votes
     if (!skipVote) {
@@ -424,24 +438,24 @@ app.post('/emoji-callback', async (req, res) => {
     // Update vote sets based on reaction type
     if (ev.type === 'reaction_added') {
       if (ev.reaction === '+1' || ev.reaction === 'thumbsup' || ev.reaction === 'thumbs_up') {
-        await redis.addThumbsUp(skipId, userId);
+        await redis.addThumbsUp(teamId, skipId, userId);
       }
       if (ev.reaction === '-1' || ev.reaction === 'thumbsdown' || ev.reaction === 'thumbs_down') {
-        await redis.addThumbsDown(skipId, userId);
+        await redis.addThumbsDown(teamId, skipId, userId);
       }
     }
 
     if (ev.type === 'reaction_removed') {
       if (ev.reaction === '+1' || ev.reaction === 'thumbsup' || ev.reaction === 'thumbs_up') {
-        await redis.removeThumbsUp(skipId, userId);
+        await redis.removeThumbsUp(teamId, skipId, userId);
       }
       if (ev.reaction === '-1' || ev.reaction === 'thumbsdown' || ev.reaction === 'thumbs_down') {
-        await redis.removeThumbsDown(skipId, userId);
+        await redis.removeThumbsDown(teamId, skipId, userId);
       }
     }
 
     // Fetch updated counts for logging
-    const updatedVote = await redis.getSkipVote(channelId, skipId);
+    const updatedVote = await redis.getSkipVote(teamId, channelId, skipId);
     console.log(`Skip vote count: 👍 ${updatedVote.thumbsUpUsers.size} unique users, 👎 ${updatedVote.thumbsDownUsers.size} unique users`);
 
     return res.sendStatus(200);
@@ -462,5 +476,4 @@ app.get('/_store', async (req, res) => {
 });
 
 module.exports = app;
-
 

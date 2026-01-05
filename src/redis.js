@@ -73,41 +73,44 @@ const CHANNEL_PREFIX = 'channel:';
 const SKIP_VOTE_PREFIX = 'skipVote:';
 const SKIP_VOTE_USERS_PREFIX = 'skipVoteUsers:';
 const TEAM_PREFIX = 'team:';
+const CHANNEL_TEAM_PREFIX = 'channelTeam:';
 
 // TTL for skip votes (15 minutes)
 const SKIP_VOTE_TTL = 60 * 15;
 
 const redis = {
-  // Channel operations
-  async getChannel(channelId) {
+  // Channel operations (now scoped by teamId)
+  async getChannel(teamId, channelId) {
     await ensureConnection();
-    const value = await redisClient.get(`${CHANNEL_PREFIX}${channelId}`);
+    const value = await redisClient.get(`${CHANNEL_PREFIX}${teamId}:${channelId}`);
     return value ? JSON.parse(value) : null;
   },
 
-  async setChannel(channelId, data) {
+  async setChannel(teamId, channelId, data) {
     await ensureConnection();
-    await redisClient.set(`${CHANNEL_PREFIX}${channelId}`, JSON.stringify(data));
+    await redisClient.set(`${CHANNEL_PREFIX}${teamId}:${channelId}`, JSON.stringify(data));
+    // Also maintain the channel-to-team mapping for reverse lookups
+    await redisClient.set(`${CHANNEL_TEAM_PREFIX}${channelId}`, teamId);
   },
 
-  async updateChannel(channelId, updates) {
-    const channel = await this.getChannel(channelId) || { slackChannelId: channelId, queue: [] };
+  async updateChannel(teamId, channelId, updates) {
+    const channel = await this.getChannel(teamId, channelId) || { slackChannelId: channelId };
     const updated = { ...channel, ...updates };
-    await this.setChannel(channelId, updated);
+    await this.setChannel(teamId, channelId, updated);
     return updated;
   },
 
-  // Skip vote operations
-  async getSkipVote(channelId, skipId) {
+  // Skip vote operations (now scoped by teamId)
+  async getSkipVote(teamId, channelId, skipId) {
     await ensureConnection();
-    const value = await redisClient.get(`${SKIP_VOTE_PREFIX}${channelId}:${skipId}`);
+    const value = await redisClient.get(`${SKIP_VOTE_PREFIX}${teamId}:${channelId}:${skipId}`);
     if (!value) return null;
 
     const vote = JSON.parse(value);
 
-    // Get the vote counts from Redis sets
-    const thumbsUpUsers = await redisClient.smembers(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsUp`) || [];
-    const thumbsDownUsers = await redisClient.smembers(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsDown`) || [];
+    // Get the vote counts from Redis sets (skipId is globally unique with timestamp)
+    const thumbsUpUsers = await redisClient.smembers(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsUp`) || [];
+    const thumbsDownUsers = await redisClient.smembers(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsDown`) || [];
 
     return {
       ...vote,
@@ -116,12 +119,12 @@ const redis = {
     };
   },
 
-  async setSkipVote(channelId, skipId, vote) {
+  async setSkipVote(teamId, channelId, skipId, vote) {
     await ensureConnection();
     // Store vote metadata
     const { thumbsUpUsers, thumbsDownUsers, ...voteData } = vote;
     await redisClient.set(
-      `${SKIP_VOTE_PREFIX}${channelId}:${skipId}`,
+      `${SKIP_VOTE_PREFIX}${teamId}:${channelId}:${skipId}`,
       JSON.stringify(voteData),
       'EX',
       SKIP_VOTE_TTL
@@ -129,54 +132,54 @@ const redis = {
 
     // Store user sets separately
     if (thumbsUpUsers && thumbsUpUsers.size > 0) {
-      await redisClient.sadd(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsUp`, ...Array.from(thumbsUpUsers));
-      await redisClient.expire(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsUp`, SKIP_VOTE_TTL);
+      await redisClient.sadd(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsUp`, ...Array.from(thumbsUpUsers));
+      await redisClient.expire(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsUp`, SKIP_VOTE_TTL);
     }
     if (thumbsDownUsers && thumbsDownUsers.size > 0) {
-      await redisClient.sadd(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsDown`, ...Array.from(thumbsDownUsers));
-      await redisClient.expire(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsDown`, SKIP_VOTE_TTL);
+      await redisClient.sadd(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsDown`, ...Array.from(thumbsDownUsers));
+      await redisClient.expire(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsDown`, SKIP_VOTE_TTL);
     }
   },
 
-  async addThumbsUp(skipId, userId) {
+  async addThumbsUp(teamId, skipId, userId) {
     await ensureConnection();
     // Add to thumbs up set (users can have both up and down)
-    await redisClient.sadd(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsUp`, userId);
+    await redisClient.sadd(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsUp`, userId);
     // Refresh TTL
-    await redisClient.expire(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsUp`, SKIP_VOTE_TTL);
+    await redisClient.expire(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsUp`, SKIP_VOTE_TTL);
   },
 
-  async addThumbsDown(skipId, userId) {
+  async addThumbsDown(teamId, skipId, userId) {
     await ensureConnection();
     // Add to thumbs down set (users can have both up and down)
-    await redisClient.sadd(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsDown`, userId);
+    await redisClient.sadd(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsDown`, userId);
     // Refresh TTL
-    await redisClient.expire(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsDown`, SKIP_VOTE_TTL);
+    await redisClient.expire(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsDown`, SKIP_VOTE_TTL);
   },
 
-  async removeThumbsUp(skipId, userId) {
+  async removeThumbsUp(teamId, skipId, userId) {
     await ensureConnection();
-    await redisClient.srem(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsUp`, userId);
+    await redisClient.srem(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsUp`, userId);
   },
 
-  async removeThumbsDown(skipId, userId) {
+  async removeThumbsDown(teamId, skipId, userId) {
     await ensureConnection();
-    await redisClient.srem(`${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsDown`, userId);
+    await redisClient.srem(`${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsDown`, userId);
   },
 
-  async deleteSkipVote(channelId, skipId) {
+  async deleteSkipVote(teamId, channelId, skipId) {
     await ensureConnection();
     await redisClient.del(
-      `${SKIP_VOTE_PREFIX}${channelId}:${skipId}`,
-      `${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsUp`,
-      `${SKIP_VOTE_USERS_PREFIX}${skipId}:thumbsDown`
+      `${SKIP_VOTE_PREFIX}${teamId}:${channelId}:${skipId}`,
+      `${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsUp`,
+      `${SKIP_VOTE_USERS_PREFIX}${teamId}:${skipId}:thumbsDown`
     );
   },
 
-  async findSkipVoteByMessageTs(channelId, messageTs) {
+  async findSkipVoteByMessageTs(teamId, channelId, messageTs) {
     await ensureConnection();
     // Scan for skip votes in this channel
-    const pattern = `${SKIP_VOTE_PREFIX}${channelId}:*`;
+    const pattern = `${SKIP_VOTE_PREFIX}${teamId}:${channelId}:*`;
     const keys = await redisClient.keys(pattern);
 
     for (const key of keys) {
@@ -184,8 +187,8 @@ const redis = {
       if (value) {
         const vote = JSON.parse(value);
         if (vote.messageTs === messageTs) {
-          const skipId = key.split(':')[2]; // Extract skipId from key
-          return await this.getSkipVote(channelId, skipId);
+          const skipId = key.split(':')[3]; // Extract skipId from key (team:channel:skipId)
+          return await this.getSkipVote(teamId, channelId, skipId);
         }
       }
     }
@@ -200,8 +203,12 @@ const redis = {
     for (const key of keys) {
       const value = await redisClient.get(key);
       if (value) {
-        const channelId = key.replace(CHANNEL_PREFIX, '');
-        channels[channelId] = JSON.parse(value);
+        // Key format is now channel:teamId:channelId
+        const parts = key.replace(CHANNEL_PREFIX, '').split(':');
+        const teamId = parts[0];
+        const channelId = parts[1];
+        const fullKey = `${teamId}:${channelId}`;
+        channels[fullKey] = JSON.parse(value);
       }
     }
     return channels;
@@ -219,17 +226,23 @@ const redis = {
     return value ? JSON.parse(value) : null;
   },
 
+  // Get team ID from channel ID (for reverse lookups)
   async getTeamByChannelId(channelId) {
     await ensureConnection();
-    // This requires looking up which team a channel belongs to
-    // For now, we'll need to store this mapping when channels are created
-    const value = await redisClient.get(`channelTeam:${channelId}`);
+    const value = await redisClient.get(`${CHANNEL_TEAM_PREFIX}${channelId}`);
     return value;
   },
 
+  // Helper methods for channel-to-team mapping
   async setChannelTeam(channelId, teamId) {
     await ensureConnection();
-    await redisClient.set(`channelTeam:${channelId}`, teamId);
+    await redisClient.set(`${CHANNEL_TEAM_PREFIX}${channelId}`, teamId);
+  },
+
+  async getChannelTeam(channelId) {
+    await ensureConnection();
+    const value = await redisClient.get(`${CHANNEL_TEAM_PREFIX}${channelId}`);
+    return value;
   }
 };
 
