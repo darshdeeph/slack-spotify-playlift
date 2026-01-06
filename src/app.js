@@ -1,5 +1,6 @@
 const express = require('express');
 const bodyParser = require('body-parser');
+const path = require('path');
 const slack = require('./slack');
 const spotify = require('./spotify');
 const redis = require('./redis');
@@ -9,6 +10,10 @@ const { Client, Receiver } = require('@upstash/qstash');
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
+
+// Serve static files from public and assets directories
+app.use(express.static(path.join(__dirname, '../public')));
+app.use('/assets', express.static(path.join(__dirname, '../assets')));
 
 
 const qstash = process.env.QSTASH_TOKEN ? new Client({ token: process.env.QSTASH_TOKEN }) : null;
@@ -33,8 +38,10 @@ app.use((req, res, next) => {
 });
 
 
-// Health
-app.get('/', (req, res) => res.send('Slack Playlift running'));
+// Landing page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/index.html'));
+});
 
 // Slack OAuth v2 - Installation URL
 app.get('/slack/install', (req, res) => {

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slack Playlift - Collaborative Music for Teams</title>
+  <meta name="description" content="Control Spotify playback collaboratively in Slack. Add songs, vote to skip, and let your team DJ together.">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'slack-red': '#E01E5A',
+            'slack-purple': '#611f69',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+    }
+  </style>
+</head>
+<body class="bg-white text-gray-900">
+  <!-- Header -->
+  <header class="fixed top-0 w-full bg-white/80 backdrop-blur-md z-50 border-b border-gray-100">
+    <nav class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <span class="text-xl font-bold text-slack-red">Playlift</span>
+      </div>
+      <div class="flex items-center gap-8">
+        <a href="#features" class="text-gray-700 hover:text-slack-red font-medium transition-colors">Features</a>
+        <a href="#how-it-works" class="text-gray-700 hover:text-slack-red font-medium transition-colors">Install</a>
+        <a href="#commands" class="text-gray-700 hover:text-slack-red font-medium transition-colors">Commands</a>
+        <a href="/slack/install" class="bg-slack-red hover:bg-slack-red/90 text-white px-6 py-2 rounded-lg font-medium transition-all">
+          Add to Slack
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="pt-32 pb-20 px-6">
+    <div class="max-w-6xl mx-auto text-center">
+      <div class="flex justify-center mb-8">
+        <img src="/assets/playlift-logo.png" alt="Playlift Logo" class="w-48 h-48 md:w-64 md:h-64">
+      </div>
+      <h1 class="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+        Let Your Team<br/>
+        <span class="text-slack-red">DJ Together</span>
+      </h1>
+      <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+        Control Spotify playback collaboratively in Slack. Add songs, vote to skip, and create the perfect soundtrack for your workspace.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+        <a href="/slack/install" class="bg-slack-red hover:bg-slack-red/90 text-white px-8 py-4 rounded-lg font-semibold text-lg transition-all shadow-lg hover:shadow-xl">
+          <svg class="inline-block w-6 h-6 mr-2" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zM6.313 15.165a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313zM8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zM8.834 6.313a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312zM18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zM17.688 8.834a2.528 2.528 0 0 1-2.523 2.521 2.527 2.527 0 0 1-2.52-2.521V2.522A2.527 2.527 0 0 1 15.165 0a2.528 2.528 0 0 1 2.523 2.522v6.312zM15.165 18.956a2.528 2.528 0 0 1 2.523 2.522A2.528 2.528 0 0 1 15.165 24a2.527 2.527 0 0 1-2.52-2.522v-2.522h2.52zM15.165 17.688a2.527 2.527 0 0 1-2.52-2.523 2.526 2.526 0 0 1 2.52-2.52h6.313A2.527 2.527 0 0 1 24 15.165a2.528 2.528 0 0 1-2.522 2.523h-6.313z"/>
+          </svg>
+          Add to Slack
+        </a>
+        <a href="#demo" class="border-2 border-gray-300 hover:border-gray-400 text-gray-700 px-8 py-4 rounded-lg font-semibold text-lg transition-all">
+          See Demo
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Demo Section -->
+  <section id="demo" class="py-20 px-6 bg-gray-50">
+    <div class="max-w-5xl mx-auto">
+      <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+        <img src="/assets/playlift-demo.gif" alt="Playlift Demo" class="w-full">
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section id="features" class="py-20 px-6">
+    <div class="max-w-6xl mx-auto">
+      <h2 class="text-4xl font-bold text-center mb-16">Simple, Powerful Features</h2>
+      <div class="grid md:grid-cols-3 gap-12">
+        <!-- Feature 1 -->
+        <div class="text-center">
+          <div class="w-16 h-16 bg-slack-red/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <svg class="w-8 h-8 text-slack-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-4">Quick Connect</h3>
+          <p class="text-gray-600">Use <code class="bg-gray-100 px-2 py-1 rounded text-sm">/connect</code> to link any Slack channel to your Spotify account in seconds.</p>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="text-center">
+          <div class="w-16 h-16 bg-slack-red/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <svg class="w-8 h-8 text-slack-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-4">Add Songs</h3>
+          <p class="text-gray-600">Anyone can queue tracks with <code class="bg-gray-100 px-2 py-1 rounded text-sm">/add-song Song - Artist</code>. Democratic music control.</p>
+        </div>
+
+        <!-- Feature 3 -->
+        <div class="text-center">
+          <div class="w-16 h-16 bg-slack-red/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+            <svg class="w-8 h-8 text-slack-red" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+            </svg>
+          </div>
+          <h3 class="text-xl font-semibold mb-4">Vote to Skip</h3>
+          <p class="text-gray-600">Use <code class="bg-gray-100 px-2 py-1 rounded text-sm">/skip</code> and let the team vote with 👍/👎 reactions. Music democracy in action.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works Section -->
+  <section id="how-it-works" class="py-20 px-6 bg-gray-50">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-4xl font-bold text-center mb-16">How It Works</h2>
+      <div class="space-y-8">
+        <div class="flex items-start gap-6">
+          <div class="flex-shrink-0 w-12 h-12 bg-slack-red text-white rounded-full flex items-center justify-center font-bold text-xl">1</div>
+          <div>
+            <h3 class="text-xl font-semibold mb-2">Install the App</h3>
+            <p class="text-gray-600">Add Playlift to your Slack workspace with one click. No configuration needed.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-6">
+          <div class="flex-shrink-0 w-12 h-12 bg-slack-red text-white rounded-full flex items-center justify-center font-bold text-xl">2</div>
+          <div>
+            <h3 class="text-xl font-semibold mb-2">Connect Spotify</h3>
+            <p class="text-gray-600">Type <code class="bg-gray-100 px-2 py-1 rounded text-sm">/connect</code> in any channel to link it to your Spotify account.</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-6">
+          <div class="flex-shrink-0 w-12 h-12 bg-slack-red text-white rounded-full flex items-center justify-center font-bold text-xl">3</div>
+          <div>
+            <h3 class="text-xl font-semibold mb-2">Start Playing</h3>
+            <p class="text-gray-600">Queue songs with <code class="bg-gray-100 px-2 py-1 rounded text-sm">/add-song</code> and vote to skip tracks you don't like. That's it!</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Commands Section -->
+  <section id="commands" class="py-20 px-6">
+    <div class="max-w-4xl mx-auto">
+      <h2 class="text-4xl font-bold text-center mb-16">Slash Commands</h2>
+      <div class="bg-gray-900 text-gray-100 rounded-2xl p-8 space-y-6">
+        <div class="border-b border-gray-700 pb-6">
+          <div class="flex items-start gap-4">
+            <code class="bg-gray-800 px-4 py-2 rounded text-green-400 font-mono text-lg">/connect</code>
+            <div>
+              <p class="text-gray-300 mt-1">Connect this channel to your Spotify account</p>
+            </div>
+          </div>
+        </div>
+        <div class="border-b border-gray-700 pb-6">
+          <div class="flex items-start gap-4">
+            <code class="bg-gray-800 px-4 py-2 rounded text-green-400 font-mono text-lg">/add-song</code>
+            <div>
+              <p class="text-gray-300 mt-1">Add a song to the queue</p>
+              <p class="text-gray-500 text-sm mt-2">Example: <code class="text-gray-400">/add-song Bohemian Rhapsody - Queen</code></p>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-start gap-4">
+            <code class="bg-gray-800 px-4 py-2 rounded text-green-400 font-mono text-lg">/skip</code>
+            <div>
+              <p class="text-gray-300 mt-1">Start a vote to skip the current track</p>
+              <p class="text-gray-500 text-sm mt-2">Team votes with 👍 (save) or 👎 (skip) reactions for 10 seconds</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-400 py-12 px-6">
+    <div class="max-w-6xl mx-auto text-center">
+      <div class="flex items-center justify-center space-x-3 mb-4">
+        <img src="/assets/playlift-logo.png" alt="Playlift Logo" class="w-8 h-8">
+        <span class="text-xl font-bold text-white">Playlift</span>
+      </div>
+      <p class="mb-4">Collaborative music control for Slack teams</p>
+      <p class="text-sm mb-6">Built with ❤️ for teams who love music</p>
+      <a href="mailto:ddoteth@proton.me" class="inline-flex items-center gap-2 bg-slack-red hover:bg-slack-red/90 text-white px-6 py-3 rounded-lg font-medium transition-all">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+        Email Me
+      </a>
+    </div>
+  </footer>
+</body>
+</html>
+
